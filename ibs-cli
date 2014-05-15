@@ -600,6 +600,8 @@ class IbsCli(object):
                                   self._args.proj_name, text)
                             subprocess.call(cmd, shell=True)
                         result = tmp
+                        if result.split(' ')[0] == 'COMPLETED':
+                            break
                 else:
                     logging.debug('No status got')
                 time.sleep(10)
