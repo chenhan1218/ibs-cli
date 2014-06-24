@@ -22,7 +22,12 @@ import urllib2
 import shutil
 import mechanize
 import cookielib
+import ConfigParser
 from HTMLParser import HTMLParser
+from urllib import urlencode
+
+
+import requests
 
 
 #The terminal has 8 colors with codes from 0 to 7
@@ -54,6 +59,42 @@ class MLStripper(HTMLParser):
 
     def get_data(self):
         return ''.join(self.fed)
+
+
+class IbsConfigParser(object):
+    '''
+    User can get username and apikey of oem-ibs API from
+    $HOME/.pes/config.txt.
+    '''
+    def __init__(self):
+        self.set_ibs_config()
+
+    def set_ibs_config(self):
+        self.cfgparser = ConfigParser.RawConfigParser()
+        self.cfgdir = '{}/.pes'.format(os.getenv('HOME'))
+        self.cfgfile = '{}/config.txt'.format(self.cfgdir)
+
+        self.cfgparser.read(self.cfgfile)
+        if self.cfgparser.has_section('oem-ibs') == False:
+            self.cfgparser.add_section('oem-ibs')
+            self.cfgparser.set('oem-ibs', 'username', '')
+            self.cfgparser.set('oem-ibs', 'apikey', '')
+
+            if not os.path.exists(self.cfgdir):
+                os.makedirs(self.cfgdir)
+
+            with open(self.cfgfile, 'w') as configfile:
+                self.cfgparser.write(configfile)
+
+    @property
+    def username(self):
+        self.cfgparser.read(self.cfgfile)
+        return self.cfgparser.get('oem-ibs', 'username')
+
+    @property
+    def apikey(self):
+        self.cfgparser.read(self.cfgfile)
+        return self.cfgparser.get('oem-ibs', 'apikey')
 
 
 class IbsCli(object):
@@ -656,6 +697,76 @@ class IbsCli(object):
             sys.exit(1)
         sys.exit(0)
 
+    def get_authenticated_url(self, url, params=None):
+        cfgparser = IbsConfigParser()
+        base_params = {
+            "username": cfgparser.username,
+            "api_key": cfgparser.apikey
+        }
+        logging.debug('username: ' + cfgparser.username)
+        logging.debug('api_key: ' + cfgparser.apikey)
+        base_params.update(params or [])
+        return "%s?%s" % (url, urlencode(base_params))
+
+    def get_latest_build_id(self, project):
+        '''
+        Return the latest successful build ID of the indicated project.
+        '''
+        payload = {
+            'project': project,
+            'result': 'COMPLETED',
+            'order_by': '-finished_at',
+            'limit': '1'
+        }
+        response = requests.get(
+            self.get_authenticated_url(
+                'https://oem-ibs.canonical.com/api/v1/buildresults/'
+            ),
+            params = payload
+        )
+        objs = json.loads(response.content)
+        logging.debug('Request status: {}'.format(response.status_code))
+        [logging.debug('{0} ({1})'.format(i['name'], i['id']))
+         for i in objs['objects']]
+        return objs['objects'].pop(0).pop('id')
+
+    def act_release(self):
+        '''
+        Release the latest successful build of a specific project.
+        '''
+        # FIXME:
+        #   The project name checking code exists at many places.
+        #   Bofu thinks proj_name should be wrote as a property and
+        #   if there is any error, it should be handled by exception.
+        if not self._args.proj_name:
+            logging.critical('No project name provided (-p proj_name)')
+            return
+
+        build_id = self.get_latest_build_id(self._args.proj_name)
+        logging.debug('latest build id: {}'.format(build_id))
+
+        cfgparser = IbsConfigParser()
+
+        headers = {'Content-Type': 'application/json'}
+        data = {
+            'build': '/api/v1/buildresults/{}/'.format(build_id),
+            'name': self._args.release_name,
+            'notes': self._args.release_notes,
+            'tag': 'GM'
+        }
+        logging.debug(data.viewitems())
+
+        response = requests.post(
+            self.get_authenticated_url(
+                'https://oem-ibs.canonical.com/api/v1/releases/',
+                #cfgparser.username,
+                #cfgparser.apikey
+            ),
+            data = json.dumps(data),
+            headers = headers
+        )
+        return response.status_code
+
     def run(self):
         action_fns = {'list-projects': self.act_list_projects,
                       'list-builds': self.act_list_builds,
@@ -664,7 +775,8 @@ class IbsCli(object):
                       'monitor': self.act_monitor,
                       'version': self.act_version,
                       'login': self.act_login,
-                      'add': self.act_add}
+                      'add': self.act_add,
+                      'release': self.act_release}
         if not os.path.exists(self._args.config_dir):
             os.makedirs(self._args.config_dir)
         if len(self._extra_args) > 0:
@@ -768,6 +880,12 @@ class MyArgumentParser(object):
         parser.add_argument('--no-download-image', action='store_true',
                             dest="no_image", default=False,
                             help=('Not to download image'))
+        parser.add_argument('--release-name',
+                            default='',
+                            help=('Name of a release'))
+        parser.add_argument('--release-notes',
+                            default='',
+                            help=('Notes of a release'))
         #parser.add_argument('-a', '--add-project-args', dest="add_project_args",
         #                    default='',
         #                    help=('arguments for adding project. It may be'
@@ -778,7 +896,7 @@ class MyArgumentParser(object):
         #                          'series=precise&'
         #                          'config_url=lp:~oem-solutions-engineers/bugsy-config/dell-bto-precise-titan'))
         actions = ['list-projects', 'list-builds', 'build', 'download',
-                   'monitor', 'version', 'login']
+                   'monitor', 'version', 'login', 'release']
         parser.add_argument('action', choices=actions,
                             default='check',
                             help=('Action is one of {0}'.
@@ -797,9 +915,10 @@ class MyArgumentParser(object):
 
         # Log filename shows clearly the type of test (pm_operation)
         # and the times it was repeated (repetitions)
-        args.log_filename = os.path.join(args.log_dir,
-                                         ('{0}.log'
-                                          .format(os.path.basename(__file__))))
+        args.log_filename = os.path.join(
+            args.log_dir,
+            ('{0}.log'.format(os.path.basename(__file__)))
+        )
         return args, extra_args
 
 
