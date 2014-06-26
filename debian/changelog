@@ -1,3 +1,14 @@
+ibs-cli (1.6) precise; urgency=low
+
+  1. Add ``release" CLI parameter for releasing a successful build.
+  2. Add oem-ibs config file to store the username and apikey used for
+     oem-ibs' RESTful API.
+  3. Add autoauth function: Pass Ubuntu SSO automatically
+    * Get email/passwrod from Ubuntu SSO configuration file.
+    * Get 2-factor by leveraging 2fa package.
+
+ -- Bofu Chen (bafu) <bofu.chen@canonical.com>  Thu, 26 Jun 2014 17:02:53 +0800
+
 ibs-cli (1.5) precise; urgency=low
 
   * Monitor will stop when the build status is COMPLETED.
