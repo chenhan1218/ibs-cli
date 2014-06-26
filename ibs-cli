@@ -67,34 +67,62 @@ class IbsConfigParser(object):
     $HOME/.pes/config.txt.
     '''
     def __init__(self):
+        self.set_ubuntusso_config()
         self.set_ibs_config()
 
-    def set_ibs_config(self):
+    def set_ubuntusso_config(self):
         self.cfgparser = ConfigParser.RawConfigParser()
         self.cfgdir = '{}/.pes'.format(os.getenv('HOME'))
-        self.cfgfile = '{}/config.txt'.format(self.cfgdir)
+        self.cfg_ubuntusso = '{}/ubuntu-sso'.format(self.cfgdir)
 
-        self.cfgparser.read(self.cfgfile)
-        if self.cfgparser.has_section('oem-ibs') == False:
-            self.cfgparser.add_section('oem-ibs')
-            self.cfgparser.set('oem-ibs', 'username', '')
-            self.cfgparser.set('oem-ibs', 'apikey', '')
+        self.cfgparser.read(self.cfg_ubuntusso)
+        if self.cfgparser.has_section('auth') == False:
+            self.cfgparser.add_section('auth')
+            self.cfgparser.set('auth', 'email', '')
+            self.cfgparser.set('auth', 'password', '')
 
             if not os.path.exists(self.cfgdir):
                 os.makedirs(self.cfgdir)
 
-            with open(self.cfgfile, 'w') as configfile:
+            with open(self.cfg_ubuntusso, 'w') as configfile:
+                self.cfgparser.write(configfile)
+
+    def set_ibs_config(self):
+        self.cfgparser = ConfigParser.RawConfigParser()
+        self.cfgdir = '{}/.pes'.format(os.getenv('HOME'))
+        self.cfg_ibscli = '{}/ibs-cli'.format(self.cfgdir)
+
+        self.cfgparser.read(self.cfg_ibscli)
+        if self.cfgparser.has_section('auth') == False:
+            self.cfgparser.add_section('auth')
+            self.cfgparser.set('auth', 'username', '')
+            self.cfgparser.set('auth', 'apikey', '')
+
+            if not os.path.exists(self.cfgdir):
+                os.makedirs(self.cfgdir)
+
+            with open(self.cfg_ibscli, 'w') as configfile:
                 self.cfgparser.write(configfile)
 
     @property
+    def email(self):
+        self.cfgparser.read(self.cfg_ubuntusso)
+        return self.cfgparser.get('auth', 'email')
+
+    @property
+    def password(self):
+        self.cfgparser.read(self.cfg_ubuntusso)
+        return self.cfgparser.get('auth', 'password')
+
+    @property
     def username(self):
-        self.cfgparser.read(self.cfgfile)
-        return self.cfgparser.get('oem-ibs', 'username')
+        self.cfgparser.read(self.cfg_ibscli)
+        return self.cfgparser.get('auth', 'username')
 
     @property
     def apikey(self):
-        self.cfgparser.read(self.cfgfile)
-        return self.cfgparser.get('oem-ibs', 'apikey')
+        self.cfgparser.read(self.cfg_ibscli)
+        return self.cfgparser.get('auth', 'apikey')
 
 
 class IbsCli(object):
@@ -400,8 +428,15 @@ class IbsCli(object):
 
         try:
             br.select_form(name='loginform')
-            br['email'] = raw_input('email: ')
-            br['password'] = getpass.getpass()
+            if self._args.autoauth is True:
+                cfgparser = IbsConfigParser()
+                br['email'] = cfgparser.email
+                br['password'] = cfgparser.password
+                logging.debug('email: {}'.format(br['email']))
+                logging.debug('password: {}'.format(br['password']))
+            else:
+                br['email'] = raw_input('email: ')
+                br['password'] = getpass.getpass()
             logging.debug('open loginform')
             r = br.submit()
             html = r.read()
@@ -411,7 +446,14 @@ class IbsCli(object):
         try:
             br.select_form(name='loginform')
             logging.debug('open loginform for 2-factor')
-            br['oath_token'] = getpass.getpass('2-factor token: ')
+            if self._args.autoauth is True:
+                try:
+                    br['oath_token'] = subprocess.check_output('2fa')
+                except OSError:  # 2fa package is not installed
+                    br['oath_token'] = getpass.getpass('2-factor token: ')
+                logging.debug('oath_token: {}'.format(br['oath_token']))
+            else:
+                br['oath_token'] = getpass.getpass('2-factor token: ')
             logging.debug('input oath_token')
             r = br.submit()
             html = r.read()
@@ -724,8 +766,13 @@ class IbsCli(object):
             ),
             params = payload
         )
-        objs = json.loads(response.content)
-        logging.debug('Request status: {}'.format(response.status_code))
+        try:
+            objs = json.loads(response.content)
+        except ValueError:
+            logging.critical('Do not get correct response from server.')
+            logging.critical('Please check your username and apikey.')
+            logging.critical('Request status: {}'.format(response.status_code))
+            raise
         [logging.debug('{0} ({1})'.format(i['name'], i['id']))
          for i in objs['objects']]
         return objs['objects'].pop(0).pop('id')
@@ -886,6 +933,10 @@ class MyArgumentParser(object):
         parser.add_argument('--release-notes',
                             default='',
                             help=('Notes of a release'))
+        parser.add_argument('--autoauth', action='store_true',
+                            default=False,
+                            help=('Use pre-configured information for ' \
+                                  'authentication'))
         #parser.add_argument('-a', '--add-project-args', dest="add_project_args",
         #                    default='',
         #                    help=('arguments for adding project. It may be'
