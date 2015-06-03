@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-__version__ = '1.4'
+__version__ = '1.7'
 __all__ = ['IbsCli']
 __author__ = 'DoroWu'
 __home_page__ = ''
@@ -734,7 +734,7 @@ class IbsCli(object):
     def act_login(self):
         page_url = 'https://oem-ibs.canonical.com/'
         try:
-            self.fetch_page(page_url + 'projects/')
+            self.fetch_page(page_url + 'builders/')
         except PermissionDenied:
             sys.exit(1)
         sys.exit(0)

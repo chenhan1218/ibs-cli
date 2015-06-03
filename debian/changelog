@@ -1,3 +1,9 @@
+ibs-cli (1.7) UNRELEASED; urgency=medium
+
+  * fetch builders page when verifying login status, it takes less time.
+
+ -- Chen-Han Hsiao (Stanley) <stanley.hsiao@canonical.com>  Wed, 03 Jun 2015 17:10:07 +0800
+
 ibs-cli (1.6) precise; urgency=low
 
   1. Add ``release" CLI parameter for releasing a successful build.
