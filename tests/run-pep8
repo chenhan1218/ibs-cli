@@ -1,0 +1,5 @@
+#! /bin/sh
+#
+# Test PEP-8 conformance.
+
+pep8 --ignore=E241,E501 ibs-cli

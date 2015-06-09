@@ -3,6 +3,7 @@ Section: python
 Vcs-Git: git://github.com/fcwu/ibs-cli
 Priority: extra
 Build-Depends: debhelper (>= 6),
+ pep8,
  python,
  python-support (>= 0.6.4),
  python-distutils-extra (>= 2.10),

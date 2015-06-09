@@ -5,5 +5,11 @@
 ##include /usr/share/cdbs/1/class/python-distutils.mk
 #-include /usr/share/cdbs/1/rules/langpack.mk
 
+check:
+	# Check the syntax of any Python scripts.
+	./tests/run-pep8
+
+clean:: check
+
 %:
 	dh ${@}
