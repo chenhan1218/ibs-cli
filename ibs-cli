@@ -377,20 +377,13 @@ class IbsProject(object):
 
         def download_all(base_path, base_url, url):
             def zsync():
-                if zsync_file is None:
-                    return False
-                compare_link = link[0] + '.zsync'
-                for link_check in self.ibsbrowser.find_records(html)[1:]:
-                    if link_check[0] == compare_link:
-                        logging.info('Trying download via zsync...')
-                        download_one_zsync(base_path,
-                                           base_url,
-                                           url + link[0])
-                        break
-                else:
-                    logging.info('No zsync file or error '
-                                 'during process: ' + url + link[0])
-                return True
+                expect_zsync_link = link[0] + '.zsync'
+                records = filter(lambda record: record[0] == expect_zsync_link, self.ibsbrowser.find_records(html))
+                if records:
+                    logging.info('Trying download via zsync...')
+                    return download_one_zsync(base_path, base_url,
+                                              url + link[0])
+                return False
 
             def rsync():
                 return download_one_rsync(base_path, base_url, url + link[0])
@@ -510,21 +503,12 @@ class IbsProject(object):
             else:
                 files = glob.glob(pjoin(base_path, '..', '..', '*', '*',
                                         'images', '*', '*.iso'))
-                if len(files) <= 0:
+                if not files:
                     files = glob.glob(pjoin(base_path, '..', '..', '*',
                                             '*', 'images', '*', '*.img'))
-                path_prefix = pjoin(base_path, '..', '..')
-                biggest = 0
-                for file in files:
-                    logging.debug('file 1: ' + file)
-                    file_no_prefix = file[len(path_prefix) + 1:]
-                    logging.debug('file 2: ' + file_no_prefix)
-                    file_list = file_no_prefix.split(os.sep)
-                    logging.debug('pair: ' + str((file_list[0], file_list[1])))
-                    t = int(file_list[0] + file_list[1])
-                    if t > biggest:
-                        biggest = t
-                        ifile = file
+                # use latest image as inputfile
+                if files:
+                    ifile = sorted(files)[-1]
             if not ifile:
                 logging.error('No reference file found. Revert')
                 return False

@@ -4,6 +4,7 @@ ibs-cli (1.7) UNRELEASED; urgency=medium
   * use oem-ibs RESTful api to get project build information.
   * Refactor code without change behavior
   * Able to download checksums while not download iso files (LP: #1459122)
+  * Find latest local image for zsync if not specify ZSYNC_FILE
 
  -- Chen-Han Hsiao (Stanley) <stanley.hsiao@canonical.com>  Wed, 03 Jun 2015 17:10:07 +0800
 
