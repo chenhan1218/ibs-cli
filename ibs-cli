@@ -164,7 +164,7 @@ class IbsBrowser(mechanize.Browser):
             return self._cookie
         self._cookie = cookielib.LWPCookieJar()
         if os.path.exists(os.path.join(self.config_dir, 'mycookie')):
-            self._cookie.load(os.path.join(self.config_dir, 'mycookie'))
+            self._cookie.load(os.path.join(self.config_dir, 'mycookie'), ignore_discard=True)
         return self.cookie
 
     @property
