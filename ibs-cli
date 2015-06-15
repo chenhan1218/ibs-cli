@@ -604,17 +604,18 @@ class IbsCli(object):
         return self._br
 
     def act_list_projects(self):
-        page_url = 'https://oem-ibs.canonical.com/'
-        html = self.browser.fetch_page(page_url + 'projects/')
-        #with open('p1.html', 'wb+') as f:
-        #with open('p1.html', 'r') as f:
-        #    #f.write(html)
-        #    html = f.read()
-        projects_regex = re.compile('<a href="/projects/(.+)/">(.+)</a>',
-                                    re.MULTILINE)
-        logging.info('  {0:40}   {1}'.format('[Codename]', '[Title]'))
-        for p in projects_regex.finditer(html):
-            logging.info('- {0:40} - {1}'.format(p.group(1), p.group(2)))
+        url = 'https://oem-ibs.canonical.com/'
+        nexturl = 'api/v1/projects/?format=json&limit=1000'
+        projects = []
+        while nexturl:
+            html = self.browser.fetch_page(url + nexturl)
+            r = json.loads(html)
+            projects = projects + r['objects']
+            nexturl = r['meta']['next']
+        projects.sort(key=lambda p: p['name'])
+        print('  {0:50}   {1}'.format('[Codename]', '[Title]'))
+        for p in projects:
+            print('- {0:50} - {1}'.format(p['name'], p['title']))
 
     def act_list_builds(self):
         page_url = 'https://oem-ibs.canonical.com/builds/+api/{0}/'.format(

@@ -6,6 +6,7 @@ ibs-cli (1.7) UNRELEASED; urgency=medium
   * Able to download checksums while not download iso files (LP: #1459122)
   * Find latest local image for zsync if not specify ZSYNC_FILE
   * Load session cookie, make ibs-cli fetch page faster.
+  * Use oem-ibs RESTful api to list projects. 7 times faster than before.
 
  -- Chen-Han Hsiao (Stanley) <stanley.hsiao@canonical.com>  Wed, 03 Jun 2015 17:10:07 +0800
 
