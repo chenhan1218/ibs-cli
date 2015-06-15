@@ -159,12 +159,16 @@ class IbsBrowser(mechanize.Browser):
         self.fetch_page('https://oem-share.canonical.com/oem/')
 
     @property
+    def cookie_file(self):
+        return pjoin(self.config_dir, 'mycookie')
+
+    @property
     def cookie(self):
         if hasattr(self, '_cookie'):
             return self._cookie
         self._cookie = cookielib.LWPCookieJar()
-        if os.path.exists(os.path.join(self.config_dir, 'mycookie')):
-            self._cookie.load(os.path.join(self.config_dir, 'mycookie'), ignore_discard=True)
+        if os.path.exists(self.cookie_file):
+            self._cookie.load(self.cookie_file, ignore_discard=True)
         return self.cookie
 
     @property
@@ -280,8 +284,8 @@ class IbsBrowser(mechanize.Browser):
         if self.log_level <= logging.DEBUG:
             with open(pjoin(self.log_dir, 'ibs-cli.html'), 'wb+') as f:
                 f.write(html)
-        self.cookie.save(pjoin(self.config_dir, 'mycookie'),
-                         ignore_discard=True)
+        self.cookie.save(self.cookie_file, ignore_discard=True)
+        os.chmod(self.cookie_file, 0600)
         self.update_pysid()
         return html
 
@@ -289,8 +293,7 @@ class IbsBrowser(mechanize.Browser):
         if hasattr(self, '_pysid'):
             return
         cookie_str = None
-        cookie_file = os.path.join(self.config_dir, 'mycookie')
-        with open(cookie_file, 'r') as f:
+        with open(self.cookie_file, 'r') as f:
             for line in f:
                 loc_pysid = line.find('pysid=')
                 if loc_pysid < 0:
