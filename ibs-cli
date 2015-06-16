@@ -583,6 +583,12 @@ class IbsProject(object):
             return ''
         return html[loc + 4:loc_end]
 
+    def buildresult(self):
+        html = self.ibsbrowser.fetch_page(self.oem_ibs_url + 'api/v1/buildresults/?format=json&project={project}&order_by=-finished_at&limit=1'.format(project=self.project_name))
+        buildresult = json.loads(html)['objects'][0]
+        logging.debug('No status got')
+        return buildresult
+
 
 class IbsCli(object):
     def __init__(self, args, extra_args):
@@ -669,11 +675,14 @@ class IbsCli(object):
                         result = tmp
                         if result.split(' ')[0] == 'COMPLETED':
                             break
+                        elif result.split(' ')[0] == 'FAILED':
+                            sys.exit(1)
                 else:
                     logging.debug('No status got')
                 time.sleep(10)
             except urllib2.URLError:
                 logging.debug('URLError when act_monitor')
+                sys.exit(1)
 
     def act_version(self):
         print __version__
