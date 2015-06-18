@@ -403,7 +403,9 @@ class IbsProject(object):
                     if any(link[0].endswith(x) for x in ('.iso.zsync',
                                                          '.img.zsync')):
                         continue
-                    if no_image and link[0].endswith('.iso'):
+                    if no_image and (
+                       link[0].endswith('.iso') or link[0].endswith('.img')):
+                        html = html
                         continue
                     if link[0][-1] == '/':
                         download_all(base_path, base_url, url + link[0])
@@ -535,14 +537,9 @@ class IbsProject(object):
             build_number = self.latest_complete_build_number()
         date, nr_in_date = build_number.split('-')
         build_url = (self.oem_share_url + '{0}/{1}/{2}/').format(self.project_name, date, nr_in_date)
-        #urls_to_fetch = ('build-log.txt', 'config/manifest.html')
-        #urls_to_fetch = ('build-log.txt', 'config/acubens.manifest',
-        #                 'images/usb-hdd/')
         urls_to_fetch = ['build-log.txt', 'config/manifest.html',
-                         'images/iso/',
+                         'images/',
                          'config/acubens.manifest', 'config.tgz']
-        if not no_image:
-            urls_to_fetch.extend(['images/usb-hdd/'])
 
         path_to_store = pjoin('download', self.project_name,
                               date,

@@ -9,6 +9,8 @@ ibs-cli (1.7) UNRELEASED; urgency=medium
   * Use oem-ibs RESTful api to list projects. 7 times faster than before.
   * Secure cookie file with owner read/write only
   * When encounter build failed, quit project monitor loop.
+  * Download image from images/ folder on oem-ibs. Include iso image under
+  	both images/iso/ and images/iso-hybrid/
 
  -- Chen-Han Hsiao (Stanley) <stanley.hsiao@canonical.com>  Wed, 03 Jun 2015 17:10:07 +0800
 
