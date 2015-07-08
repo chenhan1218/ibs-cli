@@ -1,6 +1,7 @@
-ibs-cli (1.8) UNRELEASED; urgency=medium
+ibs-cli (1.8) trusty; urgency=medium
 
   * Remove no-need statement.
+  * Fetch oem-ibs website to update session.
 
  -- Chen-Han Hsiao (Stanley) <stanley.hsiao@canonical.com>  Thu, 18 Jun 2015 15:49:26 +0800
 

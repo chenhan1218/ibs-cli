@@ -157,6 +157,7 @@ class IbsBrowser(mechanize.Browser):
             br.set_debug_responses(True)
         # fetch once to update the session
         self.fetch_page('https://oem-share.canonical.com/oem/')
+        self.fetch_page('https://oem-ibs.canonical.com/builders/')
 
     @property
     def cookie_file(self):
