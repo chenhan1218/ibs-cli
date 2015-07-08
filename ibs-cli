@@ -405,7 +405,6 @@ class IbsProject(object):
                         continue
                     if no_image and (
                        link[0].endswith('.iso') or link[0].endswith('.img')):
-                        html = html
                         continue
                     if link[0][-1] == '/':
                         download_all(base_path, base_url, url + link[0])
