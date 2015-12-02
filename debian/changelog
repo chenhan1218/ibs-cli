@@ -1,3 +1,9 @@
+ibs-cli (1.9) UNRELEASED; urgency=medium
+
+  * Update VCS location
+
+ -- Chen-Han Hsiao (Stanley) <stanley.hsiao@canonical.com>  Wed, 02 Dec 2015 16:03:39 +0800
+
 ibs-cli (1.8) trusty; urgency=medium
 
   * Remove no-need statement.
