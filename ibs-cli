@@ -150,7 +150,7 @@ class IbsBrowser(mechanize.Browser):
                           'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:19.0) '
                           'Gecko/20100101 Firefox/19.0')]
 
-        ## Want debugging messages?
+        # Want debugging messages?
         if self.log_level <= logging.DEBUG:
             br.set_debug_http(True)
             br.set_debug_redirects(True)

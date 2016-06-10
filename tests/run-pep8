@@ -2,4 +2,4 @@
 #
 # Test PEP-8 conformance.
 
-pep8 --ignore=E241,E501 ibs-cli
+pep8 --ignore=E241,E265,E402,E501 ibs-cli
